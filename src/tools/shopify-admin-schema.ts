@@ -3,45 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import zlib from "zlib";
 import { existsSync } from "fs";
-
-// Get the directory name for the current module
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Path to the schema file in the data folder
-export const SCHEMA_FILE_PATH = path.join(
-  __dirname,
-  "..",
-  "..",
-  "data",
-  "admin_schema_2025-01.json"
-);
-
-// Function to load schema content, handling decompression if needed
-export async function loadSchemaContent(schemaPath: string): Promise<string> {
-  const gzippedSchemaPath = `${schemaPath}.gz`;
-
-  // If uncompressed file doesn't exist but gzipped does, decompress it
-  if (!existsSync(schemaPath) && existsSync(gzippedSchemaPath)) {
-    console.error(
-      `[shopify-admin-schema-tool] Decompressing GraphQL schema from ${gzippedSchemaPath}`
-    );
-    const compressedData = await fs.readFile(gzippedSchemaPath);
-    const schemaContent = zlib.gunzipSync(compressedData).toString("utf-8");
-
-    // Save the uncompressed content to disk
-    await fs.writeFile(schemaPath, schemaContent, "utf-8");
-    console.error(
-      `[shopify-admin-schema-tool] Saved uncompressed schema to ${schemaPath}`
-    );
-    return schemaContent;
-  }
-
-  console.error(
-    `[shopify-admin-schema-tool] Reading GraphQL schema from ${schemaPath}`
-  );
-  return fs.readFile(schemaPath, "utf8");
-}
+import schema from "../../data/admin_schema_2025-01.json";
 
 // Maximum number of fields to extract from an object
 export const MAX_FIELDS_TO_SHOW = 50;
@@ -204,10 +166,16 @@ export async function searchShopifyAdminSchema(
   }: { filter?: Array<"all" | "types" | "queries" | "mutations"> } = {}
 ) {
   try {
-    const schemaContent = await loadSchemaContent(SCHEMA_FILE_PATH);
-
     // Parse the schema content
-    const schemaJson = JSON.parse(schemaContent);
+    const schemaJson = schema as {
+      data: {
+        __schema: {
+          types: any[];
+          matchingQueries: any[];
+          matchingMutations: any[];
+        };
+      };
+    };
 
     // If a query is provided, filter the schema
     let resultSchema = schemaJson;
@@ -223,7 +191,7 @@ export async function searchShopifyAdminSchema(
       }
       normalizedQuery = normalizedQuery.replace(/\s+/g, "");
 
-      console.error(
+      console.log(
         `[shopify-admin-schema-tool] Filtering schema with query: ${query} (normalized: ${normalizedQuery})`
       );
 

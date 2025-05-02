@@ -10,13 +10,16 @@ import { searchShopifyDocs } from "./index.js";
 // Mock console.error and console.warn
 const originalConsoleError = console.error;
 const originalConsoleWarn = console.warn;
+const originalConsoleLog = console.log;
 console.error = vi.fn();
 console.warn = vi.fn();
+console.log = vi.fn();
 
 // Clean up after tests
 afterAll(() => {
   console.error = originalConsoleError;
   console.warn = originalConsoleWarn;
+  console.log = originalConsoleLog;
 });
 
 // Sample response data for mocking

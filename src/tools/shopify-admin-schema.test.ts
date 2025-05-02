@@ -19,11 +19,13 @@ import {
 
 // Mock console.error
 const originalConsoleError = console.error;
+const originalConsoleLog = console.log;
 console.error = vi.fn();
-
+console.log = vi.fn();
 // Clean up after tests
 afterAll(() => {
   console.error = originalConsoleError;
+  console.log = originalConsoleLog;
 });
 
 describe("formatType", () => {
@@ -515,8 +517,8 @@ describe("searchShopifyAdminSchema", () => {
   test("normalizes query by removing spaces", async () => {
     await searchShopifyAdminSchema("product input");
 
-    // Check that console.error was called with the normalized search term
-    const logCalls = (console.error as any).mock.calls.map(
+    // Check that console.log was called with the normalized search term
+    const logCalls = (console.log as any).mock.calls.map(
       (call: any[]) => call[0]
     );
     const hasNormalizedMessage = logCalls.some(

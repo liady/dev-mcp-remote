@@ -15,7 +15,7 @@ export async function searchShopifyDocs(prompt: string) {
     const url = new URL("/mcp/search", SHOPIFY_BASE_URL);
     url.searchParams.append("query", prompt);
 
-    console.error(`[shopify-docs] Making GET request to: ${url.toString()}`);
+    console.log(`[shopify-docs] Making GET request to: ${url.toString()}`);
 
     // Make the GET request
     const response = await fetch(url.toString(), {
@@ -27,7 +27,7 @@ export async function searchShopifyDocs(prompt: string) {
       },
     });
 
-    console.error(
+    console.log(
       `[shopify-docs] Response status: ${response.status} ${response.statusText}`
     );
 
@@ -36,7 +36,7 @@ export async function searchShopifyDocs(prompt: string) {
     response.headers.forEach((value, key) => {
       headersObj[key] = value;
     });
-    console.error(
+    console.log(
       `[shopify-docs] Response headers: ${JSON.stringify(headersObj)}`
     );
 
@@ -47,7 +47,7 @@ export async function searchShopifyDocs(prompt: string) {
 
     // Read and process the response
     const responseText = await response.text();
-    console.error(
+    console.log(
       `[shopify-docs] Response text (truncated): ${
         responseText.substring(0, 200) +
         (responseText.length > 200 ? "..." : "")
@@ -95,6 +95,7 @@ export function shopifyTools(server: McpServer) {
     {
       query: z
         .string()
+        .default("product")
         .describe(
           "Search term to filter schema elements by name. Only pass simple terms like 'product', 'discountProduct', etc."
         ),

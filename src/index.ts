@@ -1,48 +1,39 @@
-#!/usr/bin/env node
-
+import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { shopifyTools } from "./tools/index.js";
-import { shopifyPrompts } from "./prompts/index.js";
-import { readFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname, resolve } from "path";
+import { z } from "zod";
+import { shopifyPrompts } from "./prompts";
+import { shopifyTools } from "./tools";
 
-// Get package.json version
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const packageJson = JSON.parse(
-  readFileSync(resolve(__dirname, "../package.json"), "utf8")
-);
-const VERSION = packageJson.version;
+// Define our MCP agent with tools
+export class MyMCP extends McpAgent {
+  server = new McpServer({
+    name: "Authless Calculator",
+    version: "1.0.0",
+  });
 
-async function main() {
-  // Create server instance
-  const server = new McpServer(
-    {
-      name: "shopify-dev-mcp",
-      version: VERSION,
-    },
-    {
-      capabilities: {
-        logging: {},
-      },
-    }
-  );
+  async init() {
+    // Register Shopify tools
+    shopifyTools(this.server);
 
-  // Register Shopify tools
-  shopifyTools(server);
-
-  // Register Shopify prompts
-  shopifyPrompts(server);
-
-  // Connect to transport
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error(`Shopify Dev MCP Server v${VERSION} running on stdio`);
+    // Register Shopify prompts
+    shopifyPrompts(this.server);
+  }
 }
 
-main().catch((error) => {
-  console.error("Fatal error in main():", error);
-  process.exit(1);
-});
+export default {
+  fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    const url = new URL(request.url);
+
+    if (url.pathname === "/sse" || url.pathname === "/sse/message") {
+      // @ts-ignore
+      return MyMCP.serveSSE("/sse").fetch(request, env, ctx);
+    }
+
+    if (url.pathname === "/mcp") {
+      // @ts-ignore
+      return MyMCP.serve("/mcp").fetch(request, env, ctx);
+    }
+
+    return new Response("Not found", { status: 404 });
+  },
+};
